@@ -1,6 +1,7 @@
 import pandas as pd 
 import numpy as np
 import matplotlib.pyplot as plt
+from pandas import DataFrame,Series
 
 #获取指定年数的文件信息
 def get_path(year):
@@ -30,7 +31,7 @@ total_births = pd.DataFrame(pd.pivot_table(names,
     index=['name'],values='briths',columns='sex',aggfunc=[np.mean],
     fill_value = 0).head(10))
 
-# print(total_births)
+#print(total_births)
 # total_births.plot.barh(title='Total briths by name year sex')
 # plt.show()
 
@@ -40,8 +41,38 @@ def add_prop(group):
     return group    
 
 #分组的过程中注意分组的依据,也就是by
-names = names.groupby(by=['year','sex']).apply(add_prop)
-print(names)
+names = DataFrame(names.groupby(by=['year','sex']).apply(add_prop)) 
+
+flag = np.allclose(names.groupby(by=['year','sex']).prop.sum(),1)
+print(flag)
+
+names = names.sort_values(by='prop',ascending=True)
+
+#取出子集:每队sex/year组合的前1000个名字
+def get_top1000(group):
+    return group.sort_values(by='briths',ascending=False)[:1000]
+
+grouped = names.groupby(by=['year','sex'])
+top1000 = grouped.apply(get_top1000)
+# print(top1000)
+
+boys = top1000[top1000['sex']=='M']
+grils = top1000[top1000['sex']=='F']
+
+total_births = top1000.pivot_table(values='briths',index='year',columns='name',aggfunc='sum')
+# print(total_births)
+
+sebset = DataFrame(total_births[['John','Harry','Mary','Marilyn']])
+print(sebset)
+
+sebset.plot(subplots=True,figsize=(12,10),grid=False,title='Number of briths per year')
+# plt.show()
+
+table = DataFrame(top1000.pivot_table(values='prop',index='year',columns='sex',aggfunc='sum'))
+table.plot(title='Sum of table1000.prop by year and sex',yticks=np.linspace(0,1.2,13),xticks=range(1880,2020,10))
+# plt.show()
+
+
 
 
 
